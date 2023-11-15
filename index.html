@@ -8,8 +8,91 @@
   <body>
     <script type="module">
       import kaboom from "https://unpkg.com/kaboom@3000.0.1/dist/kaboom.mjs";
-      kaboom();
-      add([text("hello world"), pos(120, 80)]);
+      kaboom({
+        background: [0, 0, 0],
+      });
+
+      scene("game", () => {
+        setGravity(1600);
+
+        //platform
+        add([
+          pos(0, height() - 100),
+          rect(width(), 100),
+          area(),
+          body({ isStatic: true }),
+        ]);
+
+        //obstacles
+        const spawnTree = () => {
+          add([
+            rect(20, rand(40, 50)),
+            area(),
+            outline(2),
+            pos(width(), height() - 100),
+            anchor("botleft"),
+            color([255, 0, 0]),
+            move(LEFT, 200),
+            "obstacle",
+          ]);
+          wait(rand(1.0, 3.0), () => {
+            spawnTree();
+          });
+        };
+        spawnTree();
+
+        //player
+        const player = add([
+          pos(100, 100),
+          rect(50, 50),
+          area(),
+          body(),
+          outline(2),
+        ]);
+
+        onKeyPress("space", () => {
+          if (player.isGrounded()) {
+            player.jump();
+          }
+        });
+        onClick(() => {
+          if (player.isGrounded()) {
+            player.jump();
+          } 
+        });
+
+        player.onCollide("obstacle", () => {
+          addKaboom(player.pos);
+          shake();
+          go("lose", score);
+        });
+        let score = 0;
+        const scoreLabel = add([text(score), pos(24, 24)]);
+
+        onUpdate(() => {
+          score++;
+          scoreLabel.text = score;
+        });
+      });
+
+      //lose scene
+      scene("lose", (score) => {
+        add([text("Game Over"), pos(center()), anchor("center")]);
+
+        add([
+          text(score),
+          pos(width() / 2, height() / 2 - 100),
+          anchor("center"),
+        ]);
+
+        onKeyPress("space", () => {
+          go("game");
+        });
+        onClick(() => {
+          go("game");
+        });
+      });
+      go("game");
     </script>
   </body>
 </html>
